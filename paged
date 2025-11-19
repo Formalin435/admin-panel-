@@ -1,0 +1,54 @@
+'use client';
+
+import { use } from 'react';
+import useSWR from 'swr';
+import Header from '../../components/Header';
+import LoadingSpinner from '../../components/LoadingSpinner';
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
+
+export default function PostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
+  const { data: post, error, isLoading } = useSWR(
+    `http://localhost:4000/posts/slug/${slug}`,
+    fetcher
+  );
+
+  if (error) return <div>Post not found</div>;
+  if (isLoading) return <LoadingSpinner />;
+
+  return (
+    <div>
+      <Header />
+      
+      <article className="container mx-auto px-4 py-8 max-w-4xl">
+        <header className="mb-8">
+          <h1 className="text-4xl font-bold mb-4">{post.title}</h1>
+          
+          <div className="flex items-center space-x-4 text-gray-600">
+            <span>By {post.author.name}</span>
+            <span>•</span>
+            <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+            <span>•</span>
+            <span>{post.views} views</span>
+          </div>
+        </header>
+
+        {post.featuredImage && (
+          <div className="relative h-96 mb-8">
+            <img
+              src={post.featuredImage}
+              alt={post.title}
+              className="w-full h-full object-cover rounded-lg"
+            />
+          </div>
+        )}
+
+        <div 
+          className="prose prose-lg max-w-none"
+          dangerouslySetInnerHTML={{ __html: post.content }}
+        />
+      </article>
+    </div>
+  );
+}
